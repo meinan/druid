@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,21 @@ import com.alibaba.druid.sql.dialect.mysql.ast.MySqlPrimaryKey;
 import com.alibaba.druid.sql.dialect.mysql.ast.MySqlUnique;
 import com.alibaba.druid.sql.dialect.mysql.ast.MySqlUseIndexHint;
 import com.alibaba.druid.sql.dialect.mysql.ast.MysqlForeignKey;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlCaseStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlCaseStatement.MySqlWhenStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlCreateProcedureStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlCursorDeclareStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlDeclareStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlElseStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlIfStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlIfStatement.MySqlElseIfStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlIterateStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlLeaveStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlLoopStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlParameter;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlRepeatStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlSelectIntoStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlWhileStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.expr.MySqlCharExpr;
 import com.alibaba.druid.sql.dialect.mysql.ast.expr.MySqlExtractExpr;
 import com.alibaba.druid.sql.dialect.mysql.ast.expr.MySqlIntervalExpr;
@@ -126,6 +141,7 @@ import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlTableIndex;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUnionQuery;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUnlockTablesStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUpdateStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUpdateTableSource;
 import com.alibaba.druid.sql.visitor.SQLASTVisitorAdapter;
 
 public class MySqlASTVisitorAdapter extends SQLASTVisitorAdapter implements MySqlASTVisitor {
@@ -1266,6 +1282,200 @@ public class MySqlASTVisitorAdapter extends SQLASTVisitorAdapter implements MySq
     @Override
     public void endVisit(MySqlBlockStatement x) {
         
+    }
+
+	/**
+	 * support procedure
+	 */
+	@Override
+	public boolean visit(MySqlCreateProcedureStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlCreateProcedureStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlParameter x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlParameter x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlWhileStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlWhileStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlIfStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlIfStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlElseIfStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlElseIfStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlElseStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlElseStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlCaseStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlCaseStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlDeclareStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlDeclareStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlSelectIntoStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlSelectIntoStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlWhenStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlWhenStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+	//add:end
+
+	@Override
+	public boolean visit(MySqlLoopStatement x) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public void endVisit(MySqlLoopStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlLeaveStatement x) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void endVisit(MySqlLeaveStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlIterateStatement x) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void endVisit(MySqlIterateStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlRepeatStatement x) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void endVisit(MySqlRepeatStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean visit(MySqlCursorDeclareStatement x) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void endVisit(MySqlCursorDeclareStatement x) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+    public boolean visit(MySqlUpdateTableSource x) {
+        return true;
+    }
+
+    @Override
+    public void endVisit(MySqlUpdateTableSource x) {
+
     }
 
 } //

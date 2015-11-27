@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class MySqlAlterTableAddPrimaryKey extends TestCase {
         parser.match(Token.EOF);
         String output = SQLUtils.toMySqlString(stmt);
         Assert.assertEquals("ALTER TABLE `test`.`tb1`" + //
-                            "\n\tCHANGE COLUMN `fid` `fid` INT(11) NULL NOT NULL,\n\t" + //
+                            "\n\tCHANGE COLUMN `fid` `fid` INT(11) NOT NULL NULL,\n\t" + //
                             "ADD PRIMARY KEY (`fid`)", output);
     }
 

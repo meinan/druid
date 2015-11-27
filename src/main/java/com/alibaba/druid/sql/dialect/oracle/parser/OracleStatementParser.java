@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,6 @@ import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleExceptionStatement;
 import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleExitStatement;
 import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleExplainStatement;
 import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleExprStatement;
-import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleFetchStatement;
 import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleFileSpecification;
 import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleForStatement;
 import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleGotoStatement;
@@ -266,20 +265,8 @@ public class OracleStatementParser extends SQLStatementParser {
                 continue;
             }
 
-            if (identifierEquals("FETCH")) {
-                lexer.nextToken();
-                OracleFetchStatement stmt = new OracleFetchStatement();
-                stmt.setCursorName(this.exprParser.name());
-                accept(Token.INTO);
-                for (;;) {
-                    stmt.getInto().add(this.exprParser.name());
-                    if (lexer.token() == Token.COMMA) {
-                        lexer.nextToken();
-                        continue;
-                    }
-
-                    break;
-                }
+            if (lexer.token() == Token.FETCH || identifierEquals("FETCH")) {
+                SQLStatement stmt = parseFetch();
                 statementList.add(stmt);
                 continue;
             }
@@ -488,6 +475,12 @@ public class OracleStatementParser extends SQLStatementParser {
             if (lexer.token() == Token.NULL) {
                 lexer.nextToken();
                 OracleExprStatement stmt = new OracleExprStatement(new SQLNullExpr());
+                statementList.add(stmt);
+                continue;
+            }
+            
+            if (lexer.token() == Token.OPEN) {
+                SQLStatement stmt = this.parseOpen();
                 statementList.add(stmt);
                 continue;
             }
@@ -1137,12 +1130,10 @@ public class OracleStatementParser extends SQLStatementParser {
                 accept(Token.SET);
 
                 for (;;) {
-                    SQLUpdateSetItem item = new SQLUpdateSetItem();
-                    item.setColumn(this.exprParser.name());
-                    accept(Token.EQ);
-                    item.setValue(this.exprParser.expr());
+                    SQLUpdateSetItem item = this.exprParser.parseUpdateSetItem();
 
                     updateClause.getItems().add(item);
+                    item.setParent(updateClause);
 
                     if (lexer.token() == (Token.COMMA)) {
                         lexer.nextToken();

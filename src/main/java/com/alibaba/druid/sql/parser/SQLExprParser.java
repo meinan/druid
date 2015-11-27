@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,8 +76,10 @@ import com.alibaba.druid.sql.ast.statement.SQLForeignKeyImpl;
 import com.alibaba.druid.sql.ast.statement.SQLPrimaryKey;
 import com.alibaba.druid.sql.ast.statement.SQLPrimaryKeyImpl;
 import com.alibaba.druid.sql.ast.statement.SQLSelect;
+import com.alibaba.druid.sql.ast.statement.SQLSelectItem;
 import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
 import com.alibaba.druid.sql.ast.statement.SQLUnique;
+import com.alibaba.druid.sql.ast.statement.SQLUpdateSetItem;
 
 public class SQLExprParser extends SQLParser {
 
@@ -183,6 +185,11 @@ public class SQLExprParser extends SQLParser {
     }
 
     public SQLExpr primary() {
+      List<String> beforeComments = null;
+      if (lexer.isKeepComments() && lexer.hasComment()) {
+          beforeComments = lexer.readAndResetComments();
+      }
+
         SQLExpr sqlExpr = null;
 
         final Token tok = lexer.token();
@@ -320,6 +327,10 @@ public class SQLExprParser extends SQLParser {
             case OVER:
             case ORDER:
             case CONSTRAINT:
+            case TYPE:
+            case OPEN:
+            case REPEAT:
+            case TABLE:
                 sqlExpr = new SQLIdentifierExpr(lexer.stringVal());
                 lexer.nextToken();
                 break;
@@ -430,8 +441,13 @@ public class SQLExprParser extends SQLParser {
                         break;
                     case IDENTIFIER: // 当负号后面为字段的情况
                         sqlExpr = new SQLIdentifierExpr(lexer.stringVal());
-                        sqlExpr = new SQLUnaryExpr(SQLUnaryOperator.Negative, sqlExpr);
                         lexer.nextToken();
+                        
+                        if (lexer.token() == Token.LPAREN || lexer.token() == Token.LBRACKET) {
+                            sqlExpr = primaryRest(sqlExpr);
+                        }
+                        sqlExpr = new SQLUnaryExpr(SQLUnaryOperator.Negative, sqlExpr);
+                        
                         break;
                     case QUES:
                         sqlExpr = new SQLUnaryExpr(SQLUnaryOperator.Negative, new SQLVariantRefExpr("?"));
@@ -552,7 +568,13 @@ public class SQLExprParser extends SQLParser {
                 throw new ParserException("ERROR. token : " + tok + ", pos : " + lexer.pos());
         }
 
-        return primaryRest(sqlExpr);
+        SQLExpr expr = primaryRest(sqlExpr);
+        
+        if (beforeComments != null) {
+            expr.addBeforeComment(beforeComments);
+        }
+        
+        return expr;
     }
 
     protected SQLExpr parseAll() {
@@ -691,6 +713,14 @@ public class SQLExprParser extends SQLParser {
             }
 
             accept(Token.RPAREN);
+            
+            if (lexer.token() == Token.OVER) {
+                SQLAggregateExpr aggregateExpr = new SQLAggregateExpr(methodName);
+                aggregateExpr.getArguments().addAll(methodInvokeExpr.getParameters());
+                over(aggregateExpr);
+                
+                return primaryRest(aggregateExpr);
+            }
 
             return primaryRest(methodInvokeExpr);
         }
@@ -933,31 +963,35 @@ public class SQLExprParser extends SQLParser {
         accept(Token.RPAREN);
 
         if (lexer.token() == Token.OVER) {
-            lexer.nextToken();
-            SQLOver over = new SQLOver();
-            accept(Token.LPAREN);
-
-            if (lexer.token() == Token.PARTITION || identifierEquals("PARTITION")) {
-                lexer.nextToken();
-                accept(Token.BY);
-
-                if (lexer.token() == (Token.LPAREN)) {
-                    lexer.nextToken();
-                    exprList(over.getPartitionBy(), over);
-                    accept(Token.RPAREN);
-                } else {
-                    exprList(over.getPartitionBy(), over);
-                }
-            }
-
-            over.setOrderBy(parseOrderBy());
-
-            accept(Token.RPAREN);
-            aggregateExpr.setOver(over);
+            over(aggregateExpr);
 
         }
 
         return aggregateExpr;
+    }
+
+    protected void over(SQLAggregateExpr aggregateExpr) {
+        lexer.nextToken();
+        SQLOver over = new SQLOver();
+        accept(Token.LPAREN);
+
+        if (lexer.token() == Token.PARTITION || identifierEquals("PARTITION")) {
+            lexer.nextToken();
+            accept(Token.BY);
+
+            if (lexer.token() == (Token.LPAREN)) {
+                lexer.nextToken();
+                exprList(over.getPartitionBy(), over);
+                accept(Token.RPAREN);
+            } else {
+                exprList(over.getPartitionBy(), over);
+            }
+        }
+
+        over.setOrderBy(parseOrderBy());
+
+        accept(Token.RPAREN);
+        aggregateExpr.setOver(over);
     }
 
     protected SQLAggregateExpr parseAggregateExprRest(SQLAggregateExpr aggregateExpr) {
@@ -998,6 +1032,28 @@ public class SQLExprParser extends SQLParser {
             item.setType(SQLOrderingSpecification.DESC);
         }
 
+        return item;
+    }
+    
+    public SQLUpdateSetItem parseUpdateSetItem() {
+        SQLUpdateSetItem item = new SQLUpdateSetItem();
+
+        if (lexer.token() == (Token.LPAREN)) {
+            lexer.nextToken();
+            SQLListExpr list = new SQLListExpr();
+            this.exprList(list.getItems(), list);
+            accept(Token.RPAREN);
+            item.setColumn(list);
+        } else {
+            item.setColumn(this.primary());
+        }
+        if (lexer.token() == Token.COLONEQ) {
+            lexer.nextToken();
+        } else {
+            accept(Token.EQ);
+        }
+        
+        item.setValue(this.expr());
         return item;
     }
 
@@ -1154,7 +1210,12 @@ public class SQLExprParser extends SQLParser {
     public SQLExpr andRest(SQLExpr expr) {
         for (;;) {
             if (lexer.token() == Token.AND || lexer.token() == Token.AMPAMP) {
+                if (lexer.isKeepComments() && lexer.hasComment()) {
+                    expr.addAfterComment(lexer.readAndResetComments());
+                }
+                
                 lexer.nextToken();
+                
                 SQLExpr rightExp = relational();
 
                 expr = new SQLBinaryOpExpr(expr, SQLBinaryOperator.BooleanAnd, rightExp, getDbType());
@@ -1652,8 +1713,19 @@ public class SQLExprParser extends SQLParser {
         } else {
             accept(Token.EQ);
         }
-        item.setValue(expr());
-
+        
+        if(lexer.token() == Token.ON) {
+            item.setValue(new SQLIdentifierExpr(lexer.stringVal()));
+            lexer.nextToken();
+        } else {
+            if (lexer.token() == Token.ALL) {
+                item.setValue(new SQLIdentifierExpr(lexer.stringVal()));
+                lexer.nextToken();
+            } else {
+                item.setValue(expr());
+            }
+        }
+        
         return item;
     }
 
@@ -1735,5 +1807,28 @@ public class SQLExprParser extends SQLParser {
 
     protected SQLForeignKeyConstraint createForeignKey() {
         return new SQLForeignKeyImpl();
+    }
+    
+    public SQLSelectItem parseSelectItem() {
+        SQLExpr expr;
+        boolean connectByRoot = false;
+        if (lexer.token() == Token.IDENTIFIER) {
+            if (identifierEquals("CONNECT_BY_ROOT")) {
+                connectByRoot = true;
+                lexer.nextToken();
+            }
+            expr = new SQLIdentifierExpr(lexer.stringVal());
+            lexer.nextTokenComma();
+
+            if (lexer.token() != Token.COMMA) {
+                expr = this.primaryRest(expr);
+                expr = this.exprRest(expr);
+            }
+        } else {
+            expr = expr();
+        }
+        final String alias = as();
+
+        return new SQLSelectItem(expr, alias, connectByRoot);
     }
 }

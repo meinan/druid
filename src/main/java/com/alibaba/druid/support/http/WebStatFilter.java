@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -315,8 +315,8 @@ public class WebStatFilter extends AbstractWebStatImpl implements Filter {
     }
 
     public final static class StatHttpServletResponseWrapper extends HttpServletResponseWrapper implements HttpServletResponse {
-
-        private int status;
+        //初始值应该设置为：HttpServletResponse.SC_OK，而不是 0。
+        private int status = HttpServletResponse.SC_OK;
 
         public StatHttpServletResponseWrapper(HttpServletResponse response){
             super(response);

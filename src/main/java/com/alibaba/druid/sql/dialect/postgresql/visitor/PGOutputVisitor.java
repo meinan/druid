@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,18 @@ import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.ast.statement.SQLTruncateStatement;
 import com.alibaba.druid.sql.dialect.postgresql.ast.PGWithClause;
 import com.alibaba.druid.sql.dialect.postgresql.ast.PGWithQuery;
-import com.alibaba.druid.sql.dialect.postgresql.ast.expr.*;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGBoxExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGCidrExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGCircleExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGExtractExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGInetExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGIntervalExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGLineSegmentsExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGMacAddrExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGParameter;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGPointExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGPolygonExpr;
+import com.alibaba.druid.sql.dialect.postgresql.ast.expr.PGTypeCastExpr;
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGDeleteStatement;
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGFunctionTableSource;
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGInsertStatement;
@@ -31,6 +42,7 @@ import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGSelectQueryBlock.ForC
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGSelectQueryBlock.PGLimit;
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGSelectQueryBlock.WindowClause;
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGSelectStatement;
+import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGShowStatement;
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGUpdateStatement;
 import com.alibaba.druid.sql.dialect.postgresql.ast.stmt.PGValuesQuery;
 import com.alibaba.druid.sql.visitor.SQLASTOutputVisitor;
@@ -221,13 +233,6 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
             x.getLimit().accept(this);
         }
 
-        if (x.getOffset() != null) {
-            println();
-            print("OFFSET ");
-            x.getOffset().accept(this);
-            print(" ROWS");
-        }
-
         if (x.getFetch() != null) {
             println();
             x.getFetch().accept(this);
@@ -302,8 +307,10 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
         if (x.getWhere() != null) {
             println();
             print("WHERE ");
+            incrementIndent();
             x.getWhere().setParent(x);
             x.getWhere().accept(this);
+            decrementIndent();
         }
 
         if (x.isReturning()) {
@@ -420,8 +427,10 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
         if (x.getWhere() != null) {
             println();
             print("WHERE ");
+            incrementIndent();
             x.getWhere().setParent(x);
             x.getWhere().accept(this);
+            decrementIndent();
         }
 
         if (x.getReturning().size() > 0) {
@@ -478,7 +487,12 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
 
 	@Override
 	public boolean visit(PGLimit x) {
-		return true;
+	    x.getRowCount().accept(this);
+	    if (x.getOffset() != null) {
+	        print(" OFFSET ");
+	        x.getOffset().accept(this);
+	    }
+		return false;
 	}
 
 	@Override
@@ -509,19 +523,6 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
         print("VALUES(");
         printAndAccept(x.getValues(), ", ");
         print(")");
-        return false;
-    }
-    
-    @Override
-    public void endVisit(PGArrayExpr x) {
-        
-    }
-    
-    @Override
-    public boolean visit(PGArrayExpr x) {
-        print("ARRAY[");
-        printAndAccept(x.getValues(), ", ");
-        print("]");
         return false;
     }
     
@@ -654,6 +655,18 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
         print(x.getValue());
         print('\'');
 
+        return false;
+    }
+    
+    @Override
+    public void endVisit(PGShowStatement x) {
+        
+    }
+    
+    @Override
+    public boolean visit(PGShowStatement x) {
+        print("SHOW ");
+        x.getExpr().accept(this);
         return false;
     }
 }

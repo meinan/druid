@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public class SQLServerIfStatement extends SQLServerObjectImpl implements SQLServ
     private SQLExpr            condition;
     private List<SQLStatement> statements = new ArrayList<SQLStatement>();
     private Else               elseItem;
+    private String             dbType;
 
     @Override
     public void accept0(SQLServerASTVisitor visitor) {
@@ -86,4 +87,11 @@ public class SQLServerIfStatement extends SQLServerObjectImpl implements SQLServ
 
     }
 
+    public String getDbType() {
+        return dbType;
+    }
+    
+    public void setDbType(String dbType) {
+        this.dbType = dbType;
+    }
 }

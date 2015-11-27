@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,9 @@ import static com.alibaba.druid.sql.parser.Token.RPAREN;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author wenshao<szujobs@hotmail.com>
@@ -56,6 +58,8 @@ public class Lexer {
     protected Keywords     keywods      = Keywords.DEFAULT_KEYWORDS;
 
     protected String       stringVal;
+    
+    protected List<String> comments = new ArrayList<String>(2);
 
     protected boolean      skipComment  = true;
 
@@ -70,12 +74,29 @@ public class Lexer {
 
     protected CommentHandler commentHandler;
 
-    protected boolean        hasComment   = false;
-
     protected boolean        endOfComment = false;
+    
+    protected boolean        keepComments = false;
+    
+    protected int            line         = 0;
+    
+    protected int            lines        = 0;
 
     public Lexer(String input){
+        this(input, null);
+    }
+    
+    public Lexer(String input, CommentHandler commentHandler){
         this(input, true);
+        this.commentHandler = commentHandler;
+    }
+    
+    public boolean isKeepComments() {
+        return keepComments;
+    }
+    
+    public void setKeepComments(boolean keepComments) {
+        this.keepComments = keepComments;
     }
 
     public CommentHandler getCommentHandler() {
@@ -270,9 +291,21 @@ public class Lexer {
 
     public final void nextToken() {
         bufPos = 0;
+        if (comments != null) {
+            comments = null;
+        }
 
+        this.lines = 0;
+        int startLine = line;
+        
         for (;;) {
             if (isWhitespace(ch)) {
+                if (ch == '\n') {
+                    line++;
+                    
+                    lines = line - startLine;
+                }
+                
                 scanChar();
                 continue;
             }
@@ -654,15 +687,19 @@ public class Lexer {
 
             ch = charAt(++pos);
             
-            if(ch == '\\') {
-                hasSpecial = true;
-                continue;
-            }
-
             if (ch == '\"' && charAt(pos - 1) != '\\') {
                 scanChar();
                 token = LITERAL_ALIAS;
                 break;
+            }
+            
+            if(ch == '\\') {
+                scanChar();
+                if (ch == '"') {
+                    hasSpecial = true;
+                } else {
+                    unscan();
+                }
             }
             
             if (bufPos == buf.length) {
@@ -759,6 +796,8 @@ public class Lexer {
     }
 
     private void scanMultiLineComment() {
+        Token lastToken = this.token;
+        
         scanChar();
         scanChar();
         mark = pos;
@@ -781,18 +820,31 @@ public class Lexer {
 
         stringVal = subString(mark, bufPos);
         token = Token.MULTI_LINE_COMMENT;
-        hasComment = true;
+        if (keepComments) {
+            addComment(stringVal);
+        }
+        
+        if (commentHandler != null && commentHandler.handle(lastToken, stringVal)) {
+            return;
+        }
+        
+        if (!isAllowComment() && !isSafeComment(stringVal)) {
+            throw new NotAllowCommentException();
+        }
     }
 
     private void scanSingleLineComment() {
+        Token lastToken = this.token;
+        
         scanChar();
         scanChar();
-        mark = pos;
+        mark = pos - 1;
         bufPos = 0;
 
         for (;;) {
             if (ch == '\r') {
                 if (charAt(pos + 1) == '\n') {
+                    line++;
                     scanChar();
                     break;
                 }
@@ -801,6 +853,7 @@ public class Lexer {
             }
 
             if (ch == '\n') {
+                line++;
                 scanChar();
                 break;
             }
@@ -816,7 +869,17 @@ public class Lexer {
 
         stringVal = subString(mark, bufPos);
         token = Token.LINE_COMMENT;
-        hasComment = true;
+        if (keepComments) {
+            addComment(stringVal);
+        }
+        
+        if (commentHandler != null && commentHandler.handle(lastToken, stringVal)) {
+            return;
+        }
+        
+        if (!isAllowComment() && !isSafeComment(stringVal)) {
+            throw new NotAllowCommentException();
+        }
     }
 
     public void scanIdentifier() {
@@ -972,6 +1035,14 @@ public class Lexer {
     public final String stringVal() {
         return stringVal;
     }
+    
+    public final List<String> readAndResetComments() {
+        List<String> comments = this.comments;
+        
+        this.comments = null;
+        
+        return comments;
+    }
 
     private boolean isOperator(char ch) {
         switch (ch) {
@@ -1080,12 +1151,11 @@ public class Lexer {
     }
 
     public static interface CommentHandler {
-
         boolean handle(Token lastToken, String comment);
     }
 
-    public boolean isHasComment() {
-        return hasComment;
+    public boolean hasComment() {
+        return comments != null;
     }
     
     public void skipToEOF() {
@@ -1124,4 +1194,14 @@ public class Lexer {
         return true;
     }
 
+    protected void addComment(String comment) {
+        if (comments == null) {
+            comments = new ArrayList<String>(2);
+        }
+        comments.add(stringVal);
+    }
+    
+    public int getLine() {
+        return line;
+    }
 }

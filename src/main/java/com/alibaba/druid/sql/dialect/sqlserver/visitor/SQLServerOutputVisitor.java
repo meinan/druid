@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerBlockStatement;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerCommitStatement;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerDeclareStatement;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerExecStatement;
+import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerExecStatement.SQLServerParameter;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerIfStatement;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerIfStatement.Else;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerInsertStatement;
@@ -245,8 +246,10 @@ public class SQLServerOutputVisitor extends SQLASTOutputVisitor implements SQLSe
         if (x.getWhere() != null) {
             println();
             print("WHERE ");
+            incrementIndent();
             x.getWhere().setParent(x);
             x.getWhere().accept(this);
+            decrementIndent();
         }
 
         return false;
@@ -688,4 +691,21 @@ public class SQLServerOutputVisitor extends SQLASTOutputVisitor implements SQLSe
     public void endVisit(SQLServerWaitForStatement x) {
         
     }
+
+	@Override
+	public boolean visit(SQLServerParameter x) {
+		// TODO Auto-generated method stub
+		x.getExpr().accept(this);
+		if(x.getType())
+		{
+			print(" OUT");
+		}
+		return false;
+	}
+
+	@Override
+	public void endVisit(SQLServerParameter x) {
+		// TODO Auto-generated method stub
+		
+	}
 }

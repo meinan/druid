@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,12 @@ public final class DruidStatService implements DruidStatServiceMBean {
 
         if (url.equals("/reset-all.json")) {
             statManagerFacade.resetAll();
+
+            return returnJSONResult(RESULT_CODE_SUCCESS, null);
+        }
+
+        if (url.equals("/log-and-reset.json")) {
+            statManagerFacade.logAndResetDataSource();
 
             return returnJSONResult(RESULT_CODE_SUCCESS, null);
         }
@@ -311,9 +317,9 @@ public final class DruidStatService implements DruidStatServiceMBean {
         List<SQLStatement> statementList = SQLUtils.parseStatements(sql, dbType);
 
         if (!statementList.isEmpty()) {
-            SQLStatement statemen = statementList.get(0);
-            SchemaStatVisitor visitor = SQLUtils.createSchemaStatVisitor(statementList, dbType);
-            statemen.accept(visitor);
+            SQLStatement sqlStmt = statementList.get(0);
+            SchemaStatVisitor visitor = SQLUtils.createSchemaStatVisitor(dbType);
+            sqlStmt.accept(visitor);
             map.put("parsedTable", visitor.getTables().toString());
             map.put("parsedFields", visitor.getColumns().toString());
             map.put("parsedConditions", visitor.getConditions().toString());

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,21 @@ import com.alibaba.druid.sql.dialect.mysql.ast.MySqlPrimaryKey;
 import com.alibaba.druid.sql.dialect.mysql.ast.MySqlUnique;
 import com.alibaba.druid.sql.dialect.mysql.ast.MySqlUseIndexHint;
 import com.alibaba.druid.sql.dialect.mysql.ast.MysqlForeignKey;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlCaseStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlCaseStatement.MySqlWhenStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlCreateProcedureStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlCursorDeclareStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlDeclareStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlElseStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlIfStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlIfStatement.MySqlElseIfStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlIterateStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlLeaveStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlLoopStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlParameter;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlRepeatStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlSelectIntoStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.clause.MySqlWhileStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.expr.MySqlCharExpr;
 import com.alibaba.druid.sql.dialect.mysql.ast.expr.MySqlExtractExpr;
 import com.alibaba.druid.sql.dialect.mysql.ast.expr.MySqlIntervalExpr;
@@ -121,6 +136,7 @@ import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlTableIndex;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUnionQuery;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUnlockTablesStatement;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUpdateStatement;
+import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlUpdateTableSource;
 import com.alibaba.druid.sql.visitor.SQLASTVisitor;
 
 public interface MySqlASTVisitor extends SQLASTVisitor {
@@ -571,4 +587,73 @@ public interface MySqlASTVisitor extends SQLASTVisitor {
     boolean visit(MySqlBlockStatement x);
 
     void endVisit(MySqlBlockStatement x);
+	
+	
+	/**
+	 * support procedure
+	 */
+    boolean visit(MySqlCreateProcedureStatement x);
+
+    void endVisit(MySqlCreateProcedureStatement x);
+	
+    boolean visit(MySqlParameter x);
+
+    void endVisit(MySqlParameter x);
+    
+    boolean visit(MySqlWhileStatement x);
+
+    void endVisit(MySqlWhileStatement x);
+    
+    boolean visit(MySqlIfStatement x);
+
+    void endVisit(MySqlIfStatement x);
+    
+    boolean visit(MySqlElseIfStatement x);
+
+    void endVisit(MySqlElseIfStatement x);
+    
+    boolean visit(MySqlElseStatement x);
+
+    void endVisit(MySqlElseStatement x);
+    
+    boolean visit(MySqlCaseStatement x);
+
+    void endVisit(MySqlCaseStatement x);
+    
+    boolean visit(MySqlDeclareStatement x);
+
+    void endVisit(MySqlDeclareStatement x);
+    
+    boolean visit(MySqlSelectIntoStatement x);
+
+    void endVisit(MySqlSelectIntoStatement x);
+    
+    boolean visit(MySqlWhenStatement x);
+
+    void endVisit(MySqlWhenStatement x);
+    
+    boolean visit(MySqlLoopStatement x);
+
+    void endVisit(MySqlLoopStatement x);
+    
+    boolean visit(MySqlLeaveStatement x);
+
+    void endVisit(MySqlLeaveStatement x);
+    
+    boolean visit(MySqlIterateStatement x);
+
+    void endVisit(MySqlIterateStatement x);
+    
+    boolean visit(MySqlRepeatStatement x);
+
+    void endVisit(MySqlRepeatStatement x);
+    
+    boolean visit(MySqlCursorDeclareStatement x);
+
+    void endVisit(MySqlCursorDeclareStatement x);
+    
+    boolean visit(MySqlUpdateTableSource x);
+
+    void endVisit(MySqlUpdateTableSource x);
+
 } //

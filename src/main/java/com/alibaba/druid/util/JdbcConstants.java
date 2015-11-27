@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public interface JdbcConstants {
     public static final String SQL_SERVER_DRIVER = "com.microsoft.jdbc.sqlserver.SQLServerDriver";
 
     public static final String ORACLE            = "oracle";
-    public static final String ORACLE_DRIVER     = "oracle.jdbc.driver.OracleDriver";
+    public static final String ORACLE_DRIVER     = "oracle.jdbc.OracleDriver";
 
     public static final String ALI_ORACLE        = "AliOracle";
     public static final String ALI_ORACLE_DRIVER = "com.alibaba.jdbc.AlibabaDriver";
@@ -52,6 +52,7 @@ public interface JdbcConstants {
     public static final String HBASE             = "hbase";
 
     public static final String HIVE              = "hive";
+    public static final String HIVE_DRIVER       = "org.apache.hive.jdbc.HiveDriver";
 
     public static final String H2                = "h2";
     public static final String H2_DRIVER         = "org.h2.Driver";

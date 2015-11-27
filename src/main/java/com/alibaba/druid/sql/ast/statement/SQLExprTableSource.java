@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,12 @@ public class SQLExprTableSource extends SQLTableSourceImpl {
     }
 
     public SQLExprTableSource(SQLExpr expr){
+        this(expr, null);
+    }
+    
+    public SQLExprTableSource(SQLExpr expr, String alias){
         this.setExpr(expr);
+        this.setAlias(alias);
     }
 
     public SQLExpr getExpr() {

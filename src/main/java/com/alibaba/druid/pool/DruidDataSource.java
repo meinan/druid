@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,7 +138,7 @@ public class DruidDataSource extends DruidAbstractDataSource
 
     // threads
     private ScheduledFuture<?>               destroySchedulerFuture;
-    private DestroyTask                      destoryTask;
+    private DestroyTask                      destroyTask;
 
     private CreateConnectionThread           createConnectionThread;
     private DestroyConnectionThread          destroyConnectionThread;
@@ -684,14 +684,14 @@ public class DruidDataSource extends DruidAbstractDataSource
     }
 
     protected void createAndStartDestroyThread() {
-        destoryTask = new DestroyTask();
+        destroyTask = new DestroyTask();
 
         if (destroyScheduler != null) {
             long period = timeBetweenEvictionRunsMillis;
             if (period <= 0) {
                 period = 1000;
             }
-            destroySchedulerFuture = destroyScheduler.scheduleAtFixedRate(destoryTask, period, period,
+            destroySchedulerFuture = destroyScheduler.scheduleAtFixedRate(destroyTask, period, period,
                                                                           TimeUnit.MILLISECONDS);
             initedLatch.countDown();
             return;
@@ -1720,6 +1720,14 @@ public class DruidDataSource extends DruidAbstractDataSource
         try {
             holder = new DruidConnectionHolder(DruidDataSource.this, connection);
         } catch (SQLException ex) {
+            lock.lock();
+            try {
+                if (createScheduler != null) {
+                    createTaskCount--;
+                }
+            } finally {
+                lock.unlock();
+            }
             LOG.error("create connection holder error", ex);
             return;
         }
@@ -1756,13 +1764,13 @@ public class DruidDataSource extends DruidAbstractDataSource
 
         @Override
         public void run() {
+            runInternal();
+        }
+      
+        private void runInternal() {
             for (;;) {
                 // addLast
-                try {
-                    lock.lockInterruptibly();
-                } catch (InterruptedException e2) {
-                    break;
-                }
+                lock.lock();
 
                 try {
                     // 必须存在线程等待，才创建连接
@@ -1791,10 +1799,16 @@ public class DruidDataSource extends DruidAbstractDataSource
 
                     if (errorCount > connectionErrorRetryAttempts && timeBetweenConnectErrorMillis > 0) {
                         if (breakAfterAcquireFailure) {
-                            createTaskCount--;
+                            lock.lock();
+                            try {
+                                createTaskCount--;
+                            } finally {
+                                lock.unlock();
+                            }
                             return;
                         }
 
+                        this.errorCount = 0; // reset errorCount
                         createScheduler.schedule(this, timeBetweenConnectErrorMillis, TimeUnit.MILLISECONDS);
                         return;
                     }
@@ -1802,6 +1816,12 @@ public class DruidDataSource extends DruidAbstractDataSource
                     LOG.error("create connection error", e);
                     continue;
                 } catch (Error e) {
+                    lock.lock();
+                    try {
+                        createTaskCount--;
+                    } finally {
+                        lock.unlock();
+                    }
                     LOG.error("create connection error", e);
                     break;
                 }
@@ -1921,7 +1941,7 @@ public class DruidDataSource extends DruidAbstractDataSource
                         break;
                     }
 
-                    destoryTask.run();
+                    destroyTask.run();
                 } catch (InterruptedException e) {
                     break;
                 }
@@ -2009,9 +2029,21 @@ public class DruidDataSource extends DruidAbstractDataSource
 
                 if (isLogAbandoned()) {
                     StringBuilder buf = new StringBuilder();
-                    buf.append("abandon connection, open stackTrace\n");
+                    buf.append("abandon connection, owner thread: ");
+                    buf.append(pooledConnection.getOwnerThread().getName());
+                    buf.append(", connected at : ");
+                    buf.append(pooledConnection.getConnectedTimeMillis());
+                    buf.append(", open stackTrace\n");
 
                     StackTraceElement[] trace = pooledConnection.getConnectStackTrace();
+                    for (int i = 0; i < trace.length; i++) {
+                        buf.append("\tat ");
+                        buf.append(trace[i].toString());
+                        buf.append("\n");
+                    }
+
+                    buf.append("ownerThread current state is "+pooledConnection.getOwnerThread().getState() + ", current stackTrace\n");
+                    trace = pooledConnection.getOwnerThread().getStackTrace();
                     for (int i = 0; i < trace.length; i++) {
                         buf.append("\tat ");
                         buf.append(trace[i].toString());
@@ -2093,6 +2125,12 @@ public class DruidDataSource extends DruidAbstractDataSource
             final long currentTimeMillis = System.currentTimeMillis();
             for (int i = 0; i < checkCount; ++i) {
                 DruidConnectionHolder connection = connections[i];
+
+                long phyConnectTimeMillis = connection.getTimeMillis() - currentTimeMillis;//physical connection connected time
+                if( phyConnectTimeMillis  > phyTimeoutMillis  ){
+                    evictList.add(connection);//if physical connection connected greater than phyTimeoutMillis, close the connection, for mysql 8 hours timeout
+                    continue;
+                }
 
                 if (checkTime) {
                     long idleMillis = currentTimeMillis - connection.getLastActiveTimeMillis();
@@ -2728,7 +2766,9 @@ public class DruidDataSource extends DruidAbstractDataSource
 
     @Override
     public ObjectName preRegister(MBeanServer server, ObjectName name) throws Exception {
-        return null;
+        //do nothing
+        //return original name to avoid NullPointerException
+        return name;
     }
 
     @Override

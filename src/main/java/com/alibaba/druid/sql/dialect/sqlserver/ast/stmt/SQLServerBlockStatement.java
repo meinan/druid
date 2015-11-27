@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import com.alibaba.druid.sql.dialect.sqlserver.visitor.SQLServerASTVisitor;
 public class SQLServerBlockStatement  extends SQLServerObjectImpl implements SQLServerStatement  {
 
     private List<SQLStatement>    statementList = new ArrayList<SQLStatement>();
+    
+    private String dbType;
 
     public List<SQLStatement> getStatementList() {
         return statementList;
@@ -43,4 +45,11 @@ public class SQLServerBlockStatement  extends SQLServerObjectImpl implements SQL
         visitor.endVisit(this);
     }
 
+    public String getDbType() {
+        return dbType;
+    }
+    
+    public void setDbType(String dbType) {
+        this.dbType = dbType;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2011 Alibaba Group Holding Ltd.
+ * Copyright 1999-2101 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,9 +106,11 @@ public class MySqlLexer extends Lexer {
             bufPos++;
         }
 
-        stringVal = subString(mark, bufPos);
+        stringVal = subString(mark - 1, bufPos + 1);
         token = Token.LINE_COMMENT;
-        hasComment = true;
+        if (keepComments) {
+            addComment(stringVal);
+        }
 
         if (commentHandler != null && commentHandler.handle(lastToken, stringVal)) {
             return;
@@ -447,14 +449,16 @@ public class MySqlLexer extends Lexer {
             } else {
                 stringVal = subString(mark, bufPos);
                 token = Token.MULTI_LINE_COMMENT;
-                hasComment = true;
-            }
-
-            if (commentHandler != null && commentHandler.handle(lastToken, stringVal)) {
-                return;
+                if (keepComments) {
+                    addComment(stringVal);
+                }
             }
 
             endOfComment = isEOF();
+            
+            if (commentHandler != null && commentHandler.handle(lastToken, stringVal)) {
+                return;
+            }
 
             if (!isHint && !isAllowComment() && !isSafeComment(stringVal)) {
                 throw new NotAllowCommentException();
@@ -491,7 +495,9 @@ public class MySqlLexer extends Lexer {
 
             stringVal = subString(mark, bufPos + 1);
             token = Token.LINE_COMMENT;
-            hasComment = true;
+            if (keepComments) {
+                addComment(stringVal);
+            }
 
             if (commentHandler != null && commentHandler.handle(lastToken, stringVal)) {
                 return;
